@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        .dashboard-header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 10px 10px;
+        }
+        .employee-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        .employee-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,.1);
+        }
+        .employee-card .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+        .employee-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+        .employee-form {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,.05);
+            padding: 2rem;
+        }
+        .form-header {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            border: none;
+            padding: 0.7rem 2rem;
+            font-weight: 600;
+        }
+        .table-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,.05);
+            overflow: hidden;
+        }
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+        }
+        .view-toggle {
+            margin-bottom: 1.5rem;
+        }
+        .view-toggle .btn {
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #dee2e6;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        .new-employee-badge {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Navigation Component
+        function Navbar({ currentView, setCurrentView }) {
+            return (
+                <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+                    <div className="container">
+                        <a className="navbar-brand" href="#">
+                            <i className="fas fa-users me-2"></i>
+                            Employee Portal
+                        </a>
+                        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                            <span className="navbar-toggler-icon"></span>
+                        </button>
+                        <div className="collapse navbar-collapse" id="navbarNav">
+                            <ul className="navbar-nav ms-auto">
+                                <li className="nav-item">
+                                    <a 
+                                        className={`nav-link ${currentView === 'dashboard' ? 'active' : ''}`}
+                                        href="#"
+                                        onClick={() => setCurrentView('dashboard')}
+                                    >
+                                        <i className="fas fa-home me-1"></i> Dashboard
+                                    </a>
+                                </li>
+                                <li className="nav-item">
+                                    <a 
+                                        className={`nav-link ${currentView === 'form' ? 'active' : ''}`}
+                                        href="#"
+                                        onClick={() => setCurrentView('form')}
+                                    >
+                                        <i className="fas fa-user-plus me-1"></i> Add Employee
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+            );
+        }
+
+        // Toast Notification Component
+        function Toast({ show, message, type, onClose }) {
+            useEffect(() => {
+                if (show) {
+                    const timer = setTimeout(() => {
+                        onClose();
+                    }, 3000);
+                    return () => clearTimeout(timer);
+                }
+            }, [show, onClose]);
+
+            if (!show) return null;
+
+            const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+
+            return (
+                <div className="toast-container">
+                    <div className={`toast show ${bgClass} text-white`} role="alert">
+                        <div className="toast-header">
+                            <strong className="me-auto">
+                                <i className={`fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2`}></i>
+                                {type === 'success' ? 'Success' : 'Error'}
+                            </strong>
+                            <button type="button" className="btn-close" onClick={onClose}></button>
+                        </div>
+                        <div className="toast-body">
+                            {message}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Dashboard Component
+        function Dashboard({ employees, onEmployeeAdded }) {
+            const [loading, setLoading] = useState(true);
+            const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+            const [apiEmployees, setApiEmployees] = useState([]);
+
+            useEffect(() => {
+                fetch('https://jsonplaceholder.typicode.com/users')
+                    .then(response => response.json())
+                    .then(data => {
+                        setApiEmployees(data);
+                        setLoading(false);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                        setLoading(false);
+                    });
+            }, []);
+
+            // Combine API employees with locally added employees
+            const allEmployees = [...apiEmployees, ...employees];
+
+            if (loading && apiEmployees.length === 0) {
+                return (
+                    <div className="container mt-4">
+                        <div className="d-flex justify-content-center">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div>
+                    <div className="dashboard-header">
+                        <div className="container">
+                            <h1><i className="fas fa-tachometer-alt me-2"></i>Employee Dashboard</h1>
+                            <p className="lead">Manage and view all employee information</p>
+                            <div className="d-flex align-items-center mt-3">
+                                <span className="badge bg-light text-dark me-3">
+                                    Total Employees: {allEmployees.length}
+                                </span>
+                                {employees.length > 0 && (
+                                    <span className="badge new-employee-badge">
+                                        Newly Added: {employees.length}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="container">
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                            <h3>Employee List</h3>
+                            <div className="view-toggle">
+                                <button 
+                                    className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-outline-primary'}`}
+                                    onClick={() => setViewMode('table')}
+                                >
+                                    <i className="fas fa-table me-1"></i> Table View
+                                </button>
+                                <button 
+                                    className={`btn ${viewMode === 'card' ? 'btn-primary' : 'btn-outline-primary'}`}
+                                    onClick={() => setViewMode('card')}
+                                >
+                                    <i className="fas fa-th-large me-1"></i> Card View
+                                </button>
+                            </div>
+                        </div>
+
+                        {allEmployees.length === 0 ? (
+                            <div className="empty-state">
+                                <i className="fas fa-users"></i>
+                                <h4>No Employees Found</h4>
+                                <p>There are no employees to display at the moment.</p>
+                                <button 
+                                    className="btn btn-primary mt-3"
+                                    onClick={() => onEmployeeAdded('form')}
+                                >
+                                    <i className="fas fa-user-plus me-2"></i>Add First Employee
+                                </button>
+                            </div>
+                        ) : viewMode === 'table' ? (
+                            <TableEmployees employees={allEmployees} apiEmployeesCount={apiEmployees.length} />
+                        ) : (
+                            <CardEmployees employees={allEmployees} apiEmployeesCount={apiEmployees.length} />
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Table View Component
+        function TableEmployees({ employees, apiEmployeesCount }) {
+            return (
+                <div className="table-container">
+                    <table className="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {employees.map((employee, index) => (
+                                <tr key={employee.id || `local-${index}`}>
+                                    <td>{employee.id || `N-${index + 1}`}</td>
+                                    <td>
+                                        {employee.name}
+                                        {!employee.id && <span className="badge new-employee-badge ms-2">New</span>}
+                                    </td>
+                                    <td>{employee.email}</td>
+                                    <td>
+                                        {employee.id ? (
+                                            <span className="badge bg-info">API</span>
+                                        ) : (
+                                            <span className="badge bg-success">Local</span>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <button className="btn btn-sm btn-outline-primary me-1">
+                                            <i className="fas fa-eye"></i> View
+                                        </button>
+                                        <button className="btn btn-sm btn-outline-secondary">
+                                            <i className="fas fa-edit"></i> Edit
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        // Card View Component
+        function CardEmployees({ employees, apiEmployeesCount }) {
+            return (
+                <div className="row">
+                    {employees.map((employee, index) => (
+                        <div className="col-md-6 col-lg-4" key={employee.id || `local-${index}`}>
+                            <div className="card employee-card">
+                                <div className="card-header d-flex justify-content-between align-items-center">
+                                    <span>Employee ID: {employee.id || `N-${index + 1}`}</span>
+                                    <div>
+                                        <i className="fas fa-user-tie me-2"></i>
+                                        {!employee.id && <span className="badge new-employee-badge">New</span>}
+                                    </div>
+                                </div>
+                                <div className="card-body">
+                                    <h5 className="card-title">
+                                        <i className="fas fa-user employee-icon"></i>
+                                        {employee.name}
+                                    </h5>
+                                    <p className="card-text">
+                                        <i className="fas fa-envelope employee-icon"></i>
+                                        {employee.email}
+                                    </p>
+                                    <p className="card-text">
+                                        <i className="fas fa-briefcase employee-icon"></i>
+                                        {employee.designation || 'N/A'}
+                                    </p>
+                                    <p className="card-text">
+                                        <i className="fas fa-map-marker-alt employee-icon"></i>
+                                        {employee.location || 'N/A'}
+                                    </p>
+                                    {employee.salary && (
+                                        <p className="card-text">
+                                            <i className="fas fa-dollar-sign employee-icon"></i>
+                                            Salary: ${employee.salary}
+                                        </p>
+                                    )}
+                                    <div className="d-flex justify-content-between align-items-center mt-3">
+                                        <span className="badge bg-light text-dark">
+                                            {employee.id ? 'API Employee' : 'Local Employee'}
+                                        </span>
+                                        <div>
+                                            <button className="btn btn-sm btn-outline-primary me-1">
+                                                <i className="fas fa-eye"></i> View
+                                            </button>
+                                            <button className="btn btn-sm btn-outline-secondary">
+                                                <i className="fas fa-edit"></i> Edit
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // Employee Form Component
+        function EmployeeForm({ onEmployeeAdded, onViewChange }) {
+            const [formData, setFormData] = useState({
+                name: '',
+                email: '',
+                designation: '',
+                location: '',
+                salary: ''
+            });
+
+            const [showToast, setShowToast] = useState(false);
+            const [toastMessage, setToastMessage] = useState('');
+            const [toastType, setToastType] = useState('success');
+
+            const handleChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prevState => ({
+                    ...prevState,
+                    [name]: value
+                }));
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                
+                // Validate form
+                if (!formData.name || !formData.email || !formData.designation || !formData.location || !formData.salary) {
+                    setToastMessage('Please fill in all required fields!');
+                    setToastType('error');
+                    setShowToast(true);
+                    return;
+                }
+
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(formData.email)) {
+                    setToastMessage('Please enter a valid email address!');
+                    setToastType('error');
+                    setShowToast(true);
+                    return;
+                }
+
+                // Create new employee object
+                const newEmployee = {
+                    ...formData,
+                    id: null, // Mark as locally added employee
+                    timestamp: new Date().toISOString()
+                };
+
+                // Pass the new employee to parent component
+                onEmployeeAdded(newEmployee);
+
+                // Show success message
+                setToastMessage('Employee added successfully! You can now view them in the dashboard.');
+                setToastType('success');
+                setShowToast(true);
+
+                // Reset form
+                setFormData({
+                    name: '',
+                    email: '',
+                    designation: '',
+                    location: '',
+                    salary: ''
+                });
+
+                // Optionally redirect to dashboard after 2 seconds
+                setTimeout(() => {
+                    onViewChange('dashboard');
+                }, 2000);
+            };
+
+            return (
+                <div>
+                    <div className="dashboard-header">
+                        <div className="container">
+                            <h1><i className="fas fa-user-plus me-2"></i>Add New Employee</h1>
+                            <p className="lead">Fill in the details to add a new employee to the system</p>
+                        </div>
+                    </div>
+                    
+                    <div className="container">
+                        <div className="row justify-content-center">
+                            <div className="col-md-8">
+                                <div className="employee-form">
+                                    <div className="form-header">
+                                        <h3>Employee Information</h3>
+                                        <p className="text-muted">Please provide all the required information</p>
+                                    </div>
+                                    <form onSubmit={handleSubmit}>
+                                        <div className="mb-3">
+                                            <label htmlFor="name" className="form-label">
+                                                Full Name <span className="text-danger">*</span>
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                className="form-control" 
+                                                id="name" 
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleChange}
+                                                placeholder="Enter employee's full name"
+                                                required 
+                                            />
+                                        </div>
+                                        <div className="mb-3">
+                                            <label htmlFor="email" className="form-label">
+                                                Email Address <span className="text-danger">*</span>
+                                            </label>
+                                            <input 
+                                                type="email" 
+                                                className="form-control" 
+                                                id="email" 
+                                                name="email"
+                                                value={formData.email}
+                                                onChange={handleChange}
+                                                placeholder="Enter employee's email address"
+                                                required 
+                                            />
+                                        </div>
+                                        <div className="mb-3">
+                                            <label htmlFor="designation" className="form-label">
+                                                Designation <span className="text-danger">*</span>
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                className="form-control" 
+                                                id="designation" 
+                                                name="designation"
+                                                value={formData.designation}
+                                                onChange={handleChange}
+                                                placeholder="Enter employee's job title"
+                                                required 
+                                            />
+                                        </div>
+                                        <div className="mb-3">
+                                            <label htmlFor="location" className="form-label">
+                                                Location <span className="text-danger">*</span>
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                className="form-control" 
+                                                id="location" 
+                                                name="location"
+                                                value={formData.location}
+                                                onChange={handleChange}
+                                                placeholder="Enter employee's work location"
+                                                required 
+                                            />
+                                        </div>
+                                        <div className="mb-3">
+                                            <label htmlFor="salary" className="form-label">
+                                                Salary <span className="text-danger">*</span>
+                                            </label>
+                                            <div className="input-group">
+                                                <span className="input-group-text">$</span>
+                                                <input 
+                                                    type="number" 
+                                                    className="form-control" 
+                                                    id="salary" 
+                                                    name="salary"
+                                                    value={formData.salary}
+                                                    onChange={handleChange}
+                                                    placeholder="Enter annual salary"
+                                                    min="0"
+                                                    step="1000"
+                                                    required 
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="d-grid gap-2 d-md-flex justify-content-md-end">
+                                            <button 
+                                                type="button" 
+                                                className="btn btn-outline-secondary me-2"
+                                                onClick={() => onViewChange('dashboard')}
+                                            >
+                                                <i className="fas fa-arrow-left me-1"></i> Back to Dashboard
+                                            </button>
+                                            <button type="submit" className="btn btn-submit">
+                                                <i className="fas fa-save me-1"></i> Save Employee
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Toast 
+                        show={showToast} 
+                        message={toastMessage} 
+                        type={toastType}
+                        onClose={() => setShowToast(false)}
+                    />
+                </div>
+            );
+        }
+
+        // Main App Component
+        function App() {
+            const [currentView, setCurrentView] = useState('dashboard');
+            const [employees, setEmployees] = useState([]);
+
+            const handleEmployeeAdded = (newEmployee) => {
+                if (typeof newEmployee === 'string') {
+                    // If string is passed, it means navigate to form
+                    setCurrentView(newEmployee);
+                } else {
+                    // If object is passed, it means add new employee
+                    setEmployees(prevEmployees => [...prevEmployees, newEmployee]);
+                }
+            };
+
+            const handleViewChange = (view) => {
+                setCurrentView(view);
+            };
+
+            return (
+                <div>
+                    <Navbar currentView={currentView} setCurrentView={setCurrentView} />
+                    {currentView === 'dashboard' ? (
+                        <Dashboard 
+                            employees={employees} 
+                            onEmployeeAdded={handleEmployeeAdded}
+                        />
+                    ) : (
+                        <EmployeeForm 
+                            onEmployeeAdded={handleEmployeeAdded}
+                            onViewChange={handleViewChange}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        // Render the App
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
